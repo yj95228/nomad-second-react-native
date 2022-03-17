@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
 	Alert,
+	Platform,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -29,7 +30,7 @@ export default function App() {
 	};
 	const loadToDos = async () => {
 		const s = await AsyncStorage.getItem(STORAGE_KEY);
-		setToDos(JSON.parse(s));
+		if (s) setToDos(JSON.parse(s));
 	};
 	const addToDo = async () => {
 		if (text === '') {
@@ -44,18 +45,28 @@ export default function App() {
 		setText('');
 	};
 	const deleteToDo = async (key) => {
-		Alert.alert('Delete To Do?', 'Are you sure?', [
-			{ text: 'Cancel' },
-			{
-				text: "I'm sure",
-				onPress: async () => {
-					const newToDos = { ...toDos };
-					delete newToDos[key];
-					setToDos(newToDos);
-					await saveToDos(newToDos);
+		if (Platform) {
+			const ok = confirm('Do you want to delete this To Do?');
+			if (ok) {
+				const newToDos = { ...toDos };
+				delete newToDos[key];
+				setToDos(newToDos);
+				await saveToDos(newToDos);
+			}
+		} else {
+			Alert.alert('Delete To Do?', 'Are you sure?', [
+				{ text: 'Cancel' },
+				{
+					text: "I'm sure",
+					onPress: async () => {
+						const newToDos = { ...toDos };
+						delete newToDos[key];
+						setToDos(newToDos);
+						await saveToDos(newToDos);
+					},
 				},
-			},
-		]);
+			]);
+		}
 	};
 
 	return (
@@ -64,7 +75,11 @@ export default function App() {
 			<View style={styles.header}>
 				<TouchableOpacity onPress={work}>
 					<Text
-						style={{ ...styles.btnText, color: working ? 'white' : theme.grey }}
+						style={{
+							fontSize: 38,
+							fontWeight: '600',
+							color: working ? 'white' : theme.grey,
+						}}
 					>
 						Work
 					</Text>
@@ -72,7 +87,8 @@ export default function App() {
 				<TouchableOpacity onPress={travel}>
 					<Text
 						style={{
-							...styles.btnText,
+							fontSize: 38,
+							fontWeight: '600',
 							color: working ? theme.grey : 'white',
 						}}
 					>
@@ -116,11 +132,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		flexDirection: 'row',
 		marginTop: 100,
-	},
-	btnText: {
-		fontSize: 38,
-		fontWeight: '600',
-		color: theme.grey,
 	},
 	input: {
 		backgroundColor: 'white',
